@@ -5,6 +5,7 @@ using Microsoft.Graph.Auth;
 using Microsoft.Identity.Client;
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 #endregion
@@ -16,19 +17,24 @@ namespace UpdateActiveDirectory
         public static async Task ListUsersAsync()
         {
             var client = GetGraphServiceClient();
-
+            var custom1 =
+                $"extension_{Program.ApiConfiguration.ExtensionAppId}_website";
+            var custom2 =
+                $"extension_{Program.ApiConfiguration.ExtensionAppId}_CustomerNumber";
+            
             var users = await client.Users
                 .Request()
-                .Select(e => new
-                {
-                    e.DisplayName,
-                    e.Id,
-                    e.Identities,
-                    e.GivenName,
-                    e.Surname,
-                    e.UserPrincipalName,
-                    e.UserType
-                })
+                // .Select(e => new
+                // {
+                //     e.DisplayName,
+                //     e.Id,
+                //     e.Identities,
+                //     e.GivenName,
+                //     e.Surname,
+                //     e.UserPrincipalName,
+                //     e.UserType
+                // })
+                .Select($"id,displayName,identities,givenName,surName,userPrincipalName,userType, extensions,{custom1},{custom2}")
                 .GetAsync();
 
             var pageIterator = PageIterator<User>.CreatePageIterator(client, users,
@@ -39,6 +45,16 @@ namespace UpdateActiveDirectory
                     Console.WriteLine($"Display Name: {user.DisplayName}");
                     Console.WriteLine($"Principal Name: {user.UserPrincipalName}");
                     Console.WriteLine($"Type: {user.UserType}");
+                    if (user.AdditionalData != null)
+                    {
+                        Console.WriteLine("***Custom Attributes***");
+                        foreach (var (key, value) in user.AdditionalData)
+                        {
+                            Console.WriteLine($"{key}: {value}");
+                        }    
+                        Console.WriteLine("***Custom Attributes***");
+                    }
+                    
 
                     foreach (var objectIdentity in user.Identities)
                     {
@@ -87,7 +103,7 @@ namespace UpdateActiveDirectory
                 DisplayName = Program.WhatToProcess.AddUserModel.DisplayName,
                 PasswordProfile = new PasswordProfile()
                 {
-                    ForceChangePasswordNextSignIn = true,
+                    ForceChangePasswordNextSignIn = false,
                     Password = Program.WhatToProcess.AddUserModel.Password
                 },
                 PasswordPolicies = "DisablePasswordExpiration",
