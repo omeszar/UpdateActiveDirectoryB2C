@@ -55,6 +55,9 @@ The WhatToProcess section is what you want the program to do:
 * DeleteUser - Will delete the user specified in the DeleteUserModel.UserId. **Careful** There is no confirmation.
 * ChangeUserPassword - Will change the User's password as specified in the ChangeUserPasswordModel
 
+In the ListUsers pay attention on how it returns custom attributes. It passes the attributes in the
+select statement. And the attributes once returned can be retrieved from the Additional Data in the object.
+
 ### Creating an application in Azure AD B2C.
 
 Create a B2C tenant:

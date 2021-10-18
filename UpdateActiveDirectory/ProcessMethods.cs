@@ -58,6 +58,7 @@ namespace UpdateActiveDirectory
 
                     foreach (var objectIdentity in user.Identities)
                     {
+                        
                         if (objectIdentity.SignInType.Contains("emailAddress",
                             StringComparison.InvariantCultureIgnoreCase))
                         {
