@@ -34,7 +34,7 @@ namespace UpdateActiveDirectory
                 //     e.UserPrincipalName,
                 //     e.UserType
                 // })
-                .Select($"id,displayName,identities,givenName,surName,userPrincipalName,userType, extensions,{custom1},{custom2}")
+                .Select($"id,displayName,identities,givenName,surName,userPrincipalName,userType, {custom1},{custom2}")
                 .GetAsync();
 
             var pageIterator = PageIterator<User>.CreatePageIterator(client, users,
