@@ -22,6 +22,12 @@ namespace UpdateActiveDirectory
             var custom2 =
                 $"extension_{Program.ApiConfiguration.ExtensionAppId}_CustomerNumber";
             
+            var custom3 =
+                $"extension_{Program.ApiConfiguration.ExtensionAppId}_SBAmortizationRole";
+            
+            var custom4 =
+                $"extension_{Program.ApiConfiguration.ExtensionAppId}_MWFRole";
+            
             var users = await client.Users
                 .Request()
                 // .Select(e => new
@@ -34,14 +40,14 @@ namespace UpdateActiveDirectory
                 //     e.UserPrincipalName,
                 //     e.UserType
                 // })
-                .Select($"id,displayName,identities,givenName,surName,userPrincipalName,userType, {custom1},{custom2}")
+                .Select($"id,displayName,identities,givenName,surName,userPrincipalName,userType, {custom1},{custom2}, {custom3}, {custom4}")
                 .GetAsync();
 
             var pageIterator = PageIterator<User>.CreatePageIterator(client, users,
                 (user) =>
                 {
                     Console.WriteLine($"{user.Id}");
-                    Console.WriteLine($"{user.GivenName} {user.Surname}");
+                    Console.WriteLine($"First: {user.GivenName} - Last: {user.Surname}");
                     Console.WriteLine($"Display Name: {user.DisplayName}");
                     Console.WriteLine($"Principal Name: {user.UserPrincipalName}");
                     Console.WriteLine($"Type: {user.UserType}");
