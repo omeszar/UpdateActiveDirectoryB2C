@@ -5,7 +5,8 @@ using Microsoft.Graph.Auth;
 using Microsoft.Identity.Client;
 using System;
 using System.Collections.Generic;
-using System.Text.Json;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 #endregion
@@ -21,13 +22,13 @@ namespace UpdateActiveDirectory
                 $"extension_{Program.ApiConfiguration.ExtensionAppId}_website";
             var custom2 =
                 $"extension_{Program.ApiConfiguration.ExtensionAppId}_CustomerNumber";
-            
+
             var custom3 =
                 $"extension_{Program.ApiConfiguration.ExtensionAppId}_SBAmortizationRole";
-            
+
             var custom4 =
                 $"extension_{Program.ApiConfiguration.ExtensionAppId}_MWFRole";
-            
+
             var users = await client.Users
                 .Request()
                 // .Select(e => new
@@ -40,45 +41,14 @@ namespace UpdateActiveDirectory
                 //     e.UserPrincipalName,
                 //     e.UserType
                 // })
-                .Select($"id,displayName,identities,givenName,surName,userPrincipalName,userType, {custom1},{custom2}, {custom3}, {custom4}")
+                .Select(
+                    $"id,displayName,identities,givenName,surName,userPrincipalName,userType,otherMails, {custom1},{custom2}, {custom3}, {custom4}")
                 .GetAsync();
 
-            var pageIterator = PageIterator<User>.CreatePageIterator(client, users,
-                (user) =>
-                {
-                    Console.WriteLine($"{user.Id}");
-                    Console.WriteLine($"First: {user.GivenName} - Last: {user.Surname}");
-                    Console.WriteLine($"Display Name: {user.DisplayName}");
-                    Console.WriteLine($"Principal Name: {user.UserPrincipalName}");
-                    Console.WriteLine($"Type: {user.UserType}");
-                    if (user.AdditionalData != null)
-                    {
-                        Console.WriteLine("***Custom Attributes***");
-                        foreach (var (key, value) in user.AdditionalData)
-                        {
-                            Console.WriteLine($"{key}: {value}");
-                        }    
-                        Console.WriteLine("***Custom Attributes***");
-                    }
-                    
-
-                    foreach (var objectIdentity in user.Identities)
-                    {
-                        
-                        if (objectIdentity.SignInType.Contains("emailAddress",
-                            StringComparison.InvariantCultureIgnoreCase))
-                        {
-                            Console.WriteLine($"Identity: {objectIdentity.IssuerAssignedId}");
-                        }
-                    }
-
-                    Console.WriteLine($"**************{Environment.NewLine}");
-                    return true;
-                },
-                (req) => req);
-
-            await pageIterator.IterateAsync();
+            await DisplayListOfUsersAsync(client, users);
         }
+
+        
 
         public static async Task AddClaimToUserAsync()
         {
@@ -142,7 +112,7 @@ namespace UpdateActiveDirectory
         public static async Task ChangeUserPasswordAsync()
         {
             var client = GetGraphServiceClient();
-            
+
             var user = new User
             {
                 PasswordProfile = new PasswordProfile
@@ -151,10 +121,88 @@ namespace UpdateActiveDirectory
                     Password = Program.WhatToProcess.ChangeUserPasswordModel.NewPassword
                 }
             };
-            
+
             await client.Users[Program.WhatToProcess.ChangeUserPasswordModel.UserId]
                 .Request()
                 .UpdateAsync(user);
+        }
+
+        public static async Task FindUser()
+        {
+            var client = GetGraphServiceClient();
+
+            var filter = new StringBuilder();
+
+            filter.Append($"startsWith(givenName, '{Program.WhatToProcess.FindUserModel.SearchString}')");
+            filter.Append(" or ");
+            filter.Append($"startsWith(Surname, '{Program.WhatToProcess.FindUserModel.SearchString}')");
+            filter.Append(" or ");
+            filter.Append($"startsWith(displayName, '{Program.WhatToProcess.FindUserModel.SearchString}')");
+            // filter.Append(" or ");
+            // filter.Append($"startsWith(mail, '{Program.WhatToProcess.FindUserModel.SearchString}')");
+            filter.Append(" or ");
+            filter.Append($"otherMails/any(x:startsWith(x, '{Program.WhatToProcess.FindUserModel.SearchString}'))");
+
+
+            var custom1 =
+                $"extension_{Program.ApiConfiguration.ExtensionAppId}_website";
+            var custom2 =
+                $"extension_{Program.ApiConfiguration.ExtensionAppId}_CustomerNumber";
+
+            var custom3 =
+                $"extension_{Program.ApiConfiguration.ExtensionAppId}_SBAmortizationRole";
+
+            var custom4 =
+                $"extension_{Program.ApiConfiguration.ExtensionAppId}_MWFRole";
+            
+            Console.WriteLine(filter.ToString());
+
+            var users = await client.Users.Request().Filter(filter.ToString())
+                .Select(
+                    $"id,displayName,identities,givenName,surName,userPrincipalName,userType,otherMails, {custom1},{custom2}, {custom3}, {custom4}")
+                .GetAsync();
+            
+            await DisplayListOfUsersAsync(client, users);
+        }
+
+        private static async Task DisplayListOfUsersAsync(GraphServiceClient client, IGraphServiceUsersCollectionPage users)
+        {
+            var pageIterator = PageIterator<User>.CreatePageIterator(client, users,
+                (user) =>
+                {
+                    Console.WriteLine($"{user.Id}");
+                    Console.WriteLine($"First: {user.GivenName} - Last: {user.Surname}");
+                    Console.WriteLine($"Display Name: {user.DisplayName}");
+                    Console.WriteLine($"Principal Name: {user.UserPrincipalName}");
+                    Console.WriteLine($"Type: {user.UserType}");
+                    Console.WriteLine($"Mail: {user.OtherMails?.First()}");
+                    if (user.AdditionalData != null)
+                    {
+                        Console.WriteLine("***Custom Attributes***");
+                        foreach (var (key, value) in user.AdditionalData)
+                        {
+                            Console.WriteLine($"{key}: {value}");
+                        }
+
+                        Console.WriteLine("***Custom Attributes***");
+                    }
+
+
+                    foreach (var objectIdentity in user.Identities)
+                    {
+                        if (objectIdentity.SignInType.Contains("emailAddress",
+                                StringComparison.InvariantCultureIgnoreCase))
+                        {
+                            Console.WriteLine($"Identity: {objectIdentity.IssuerAssignedId}");
+                        }
+                    }
+
+                    Console.WriteLine($"**************{Environment.NewLine}");
+                    return true;
+                },
+                (req) => req);
+
+            await pageIterator.IterateAsync();
         }
         
         private static GraphServiceClient GetGraphServiceClient()
@@ -170,7 +218,5 @@ namespace UpdateActiveDirectory
             var client = new GraphServiceClient(authProvider);
             return client;
         }
-
-        
     }
 }

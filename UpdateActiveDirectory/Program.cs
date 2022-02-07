@@ -54,6 +54,11 @@ namespace UpdateActiveDirectory
             {
                 await ProcessMethods.ListUsersAsync();
             }
+
+            if (WhatToProcess.FindUser)
+            {
+                await ProcessMethods.FindUser();
+            }
             
             Console.WriteLine("Done");
         }

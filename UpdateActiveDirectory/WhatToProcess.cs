@@ -7,10 +7,12 @@
         public bool ListUsers { get; set; }
         public bool DeleteUser { get; set; }
         public bool ChangeUserPassword { get; set; }
+        public bool FindUser { get; set; }
         public AddClaimModel AddClaimModel { get; set; }
         public AddUserModel AddUserModel { get; set; }
         public DeleteUserModel DeleteUserModel { get; set; }
         public ChangeUserPasswordModel ChangeUserPasswordModel { get; set; }
+        public FindUserModel FindUserModel { get; set; }
     }
 
     public class AddClaimModel
@@ -38,5 +40,10 @@
     {
         public string UserId { get; set; }
         public string NewPassword { get; set; }
+    }
+
+    public class FindUserModel
+    {
+        public string SearchString { get; set; }
     }
 }
